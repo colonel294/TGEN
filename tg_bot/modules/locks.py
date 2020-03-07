@@ -14,18 +14,32 @@ from tg_bot import dispatcher, SUDO_USERS, LOGGER
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import can_delete, is_user_admin, user_not_admin, user_admin, \
     bot_can_delete, is_bot_admin
-from tg_bot.modules.helper_funcs.filters import CustomFilters
 from tg_bot.modules.log_channel import loggable
 from tg_bot.modules.sql import users_sql
 
-LOCK_TYPES = {'sticker': Filters.sticker,
+LOCK_TYPES = {'استیکر': Filters.sticker,
+              'آهنگ': Filters.audio,
+              'صدا': Filters.voice,
+              'فایل': Filters.document & ~Filters.animation,
+              'فیلم': Filters.video,
+              'ویدیو': Filters.video_note,
+              'مخاطب': Filters.contact,
+              'عکس': Filters.photo,
+              'گیف': Filters.animation,
+              'لینک': Filters.entity(MessageEntity.URL) | Filters.caption_entity(MessageEntity.URL),
+              'ربات': Filters.status_update.new_chat_members,
+              'فوروارد': Filters.forwarded,
+              'بازی': Filters.game,
+              'مکان': Filters.location,
+			  'sticker': Filters.sticker,
               'audio': Filters.audio,
               'voice': Filters.voice,
-              'document': Filters.document,
+              'document': Filters.document & ~Filters.animation,
               'video': Filters.video,
+              'videonote': Filters.video_note,
               'contact': Filters.contact,
               'photo': Filters.photo,
-              'gif': Filters.document & CustomFilters.mime_type("video/mp4"),
+              'gif': Filters.animation,
               'url': Filters.entity(MessageEntity.URL) | Filters.caption_entity(MessageEntity.URL),
               'bots': Filters.status_update.new_chat_members,
               'forward': Filters.forwarded,
@@ -33,17 +47,22 @@ LOCK_TYPES = {'sticker': Filters.sticker,
               'location': Filters.location,
               }
 
-GIF = Filters.document & CustomFilters.mime_type("video/mp4")
-OTHER = Filters.game | Filters.sticker | GIF
-MEDIA = Filters.audio | Filters.document | Filters.video | Filters.voice | Filters.photo
-MESSAGES = Filters.text | Filters.contact | Filters.location | Filters.venue | Filters.command | MEDIA | OTHER
+GIF = Filters.animation
+OTHER = Filters.game | Filters.sticker | GIF 
+MEDIA = Filters.audio | Filters.document | Filters.video | Filters.video_note | Filters.voice | Filters.photo
+MESSAGES = Filters.text | Filters.contact | Filters.location | Filters.venue | Filters.command 
 PREVIEWS = Filters.entity("url")
 
-RESTRICTION_TYPES = {'messages': MESSAGES,
+RESTRICTION_TYPES = {'پیام': MESSAGES,
+                     'مدیا': MEDIA,
+                     'دیگر': OTHER,
+                       #'پیشنمایش': PREVIEWS, # NOTE: this has been removed cos its useless atm.
+                     'گروه': Filters.all
+					 'messages': MESSAGES,
                      'media': MEDIA,
                      'other': OTHER,
-                     # 'previews': PREVIEWS, # NOTE: this has been removed cos its useless atm.
-                     'all': Filters.all}
+                       #'پیشنمایش': PREVIEWS, # NOTE: this has been removed cos its useless atm.
+                     'gp': Filters.all}
 
 PERM_GROUP = 1
 REST_GROUP = 2
@@ -92,7 +111,7 @@ def unrestr_members(bot, chat_id, members, messages=True, media=True, other=True
 
 @run_async
 def locktypes(bot: Bot, update: Update):
-    update.effective_message.reply_text("\n - ".join(["Locks: "] + list(LOCK_TYPES) + list(RESTRICTION_TYPES)))
+    update.effective_message.reply_text("\n - ".join(["قفل ها: "] + list(LOCK_TYPES) + list(RESTRICTION_TYPES)))
 
 
 @user_admin
@@ -106,12 +125,12 @@ def lock(bot: Bot, update: Update, args: List[str]) -> str:
         if len(args) >= 1:
             if args[0] in LOCK_TYPES:
                 sql.update_lock(chat.id, args[0], locked=True)
-                message.reply_text("Locked {} messages for all non-admins!".format(args[0]))
+                message.reply_text("{} برای افراد عادی قفل شد".format(args[0]))
 
                 return "<b>{}:</b>" \
-                       "\n#LOCK" \
-                       "\n<b>Admin:</b> {}" \
-                       "\nLocked <code>{}</code>.".format(html.escape(chat.title),
+                       "\n#قفل" \
+                       "\n<b>توسط:</b> {}" \
+                       "\nبخش <code>{}</code>.".format(html.escape(chat.title),
                                                           mention_html(user.id, user.first_name), args[0])
 
             elif args[0] in RESTRICTION_TYPES:
@@ -120,18 +139,18 @@ def lock(bot: Bot, update: Update, args: List[str]) -> str:
                     members = users_sql.get_chat_members(str(chat.id))
                     restr_members(bot, chat.id, members, messages=True, media=True, other=True)
 
-                message.reply_text("Locked {} for all non-admins!".format(args[0]))
+                message.reply_text("{} برای افراد عادی قفل شد!".format(args[0]))
                 return "<b>{}:</b>" \
-                       "\n#LOCK" \
-                       "\n<b>Admin:</b> {}" \
-                       "\nLocked <code>{}</code>.".format(html.escape(chat.title),
+                       "\n#قفل" \
+                       "\n<b>توسط:</b> {}" \
+                       "\nبخش <code>{}</code>.".format(html.escape(chat.title),
                                                           mention_html(user.id, user.first_name), args[0])
 
             else:
-                message.reply_text("What are you trying to lock...? Try /locktypes for the list of lockables")
+                message.reply_text("چیو میخوای قفل کنی ؟ لیست قفل هارو با !قفلها یا /locktypes نشون میدم")
 
     else:
-        message.reply_text("I'm not an administrator, or haven't got delete rights.")
+        message.reply_text("اومم من هنوز ادمین نیستم ! شایدم اجازه قفل برام فعال نیس")
 
     return ""
 
@@ -147,11 +166,11 @@ def unlock(bot: Bot, update: Update, args: List[str]) -> str:
         if len(args) >= 1:
             if args[0] in LOCK_TYPES:
                 sql.update_lock(chat.id, args[0], locked=False)
-                message.reply_text("Unlocked {} for everyone!".format(args[0]))
+                message.reply_text("{}برای همه باز شد!".format(args[0]))
                 return "<b>{}:</b>" \
-                       "\n#UNLOCK" \
-                       "\n<b>Admin:</b> {}" \
-                       "\nUnlocked <code>{}</code>.".format(html.escape(chat.title),
+                       "\n#بی_قفل" \
+                       "\n<b>توسط:</b> {}" \
+                       "\nبخش <code>{}</code>.".format(html.escape(chat.title),
                                                             mention_html(user.id, user.first_name), args[0])
 
             elif args[0] in RESTRICTION_TYPES:
@@ -173,18 +192,18 @@ def unlock(bot: Bot, update: Update, args: List[str]) -> str:
                 elif args[0] == "all":
                     unrestr_members(bot, chat.id, members, True, True, True, True)
                 """
-                message.reply_text("Unlocked {} for everyone!".format(args[0]))
+                message.reply_text("قفل {} برداشته شد!!".format(args[0]))
 
                 return "<b>{}:</b>" \
-                       "\n#UNLOCK" \
-                       "\n<b>Admin:</b> {}" \
-                       "\nUnlocked <code>{}</code>.".format(html.escape(chat.title),
+                       "\n#بی_قفل" \
+                       "\n<b>توسط:</b> {}" \
+                       "\nبخش <code>{}</code>.".format(html.escape(chat.title),
                                                             mention_html(user.id, user.first_name), args[0])
             else:
-                message.reply_text("What are you trying to unlock...? Try /locktypes for the list of lockables")
+                message.reply_text("چیو میخوای باز کنی؟ از دستور !قفلها یا /locktypes لیست بخش هامو ببین")
 
         else:
-            bot.sendMessage(chat.id, "What are you trying to unlock...?")
+            bot.sendMessage(chat.id, "چیو میخوای باز کنی ؟ ")
 
     return ""
 
@@ -197,17 +216,17 @@ def del_lockables(bot: Bot, update: Update):
 
     for lockable, filter in LOCK_TYPES.items():
         if filter(message) and sql.is_locked(chat.id, lockable) and can_delete(chat, bot.id):
-            if lockable == "bots":
+            if lockable == "ربات":
                 new_members = update.effective_message.new_chat_members
                 for new_mem in new_members:
                     if new_mem.is_bot:
                         if not is_bot_admin(chat, bot.id):
-                            message.reply_text("I see a bot, and I've been told to stop them joining... "
-                                               "but I'm not admin!")
+                            message.reply_text("اگه کسی رباتی بیاره من اجازه ادد کردن بهش نمیدم ولی "
+                                               "هنوز ادمین نیستم!")
                             return
 
                         chat.kick_member(new_mem.id)
-                        message.reply_text("Only admins are allowed to add bots to this chat! Get outta here.")
+                        
             else:
                 try:
                     message.delete()
@@ -241,31 +260,32 @@ def build_lock_message(chat_id):
     locks = sql.get_locks(chat_id)
     restr = sql.get_restr(chat_id)
     if not (locks or restr):
-        res = "There are no current locks in this chat."
+        res = "قفل خاصی برای این گپ تنظیم نکردی"
     else:
-        res = "These are the locks in this chat:"
+        res = "اینا قفل های مربوط به این گپ هستن!:"
         if locks:
-            res += "\n - sticker = `{}`" \
-                   "\n - audio = `{}`" \
-                   "\n - voice = `{}`" \
-                   "\n - document = `{}`" \
-                   "\n - video = `{}`" \
-                   "\n - contact = `{}`" \
-                   "\n - photo = `{}`" \
-                   "\n - gif = `{}`" \
-                   "\n - url = `{}`" \
-                   "\n - bots = `{}`" \
-                   "\n - forward = `{}`" \
-                   "\n - game = `{}`" \
-                   "\n - location = `{}`".format(locks.sticker, locks.audio, locks.voice, locks.document,
-                                                 locks.video, locks.contact, locks.photo, locks.gif, locks.url,
+            res += "\n - استیکر = `{}`" \
+                   "\n - آهنگ = `{}`" \
+                   "\n - صدا = `{}`" \
+                   "\n - فایل = `{}`" \
+                   "\n - فیلم = `{}`" \
+                   "\n - پیام ویدیویی = `{}`" \
+                   "\n - مخاطب = `{}`" \
+                   "\n - عکس = `{}`" \
+                   "\n - گیف = `{}`" \
+                   "\n - لینک = `{}`" \
+                   "\n - ربات = `{}`" \
+                   "\n - فوروارد = `{}`" \
+                   "\n - بازی = `{}`" \
+                   "\n - مکان = `{}`".format(locks.sticker, locks.audio, locks.voice, locks.document,
+                                                 locks.video, locks.videonote, locks.contact, locks.photo, locks.gif, locks.url,
                                                  locks.bots, locks.forward, locks.game, locks.location)
         if restr:
-            res += "\n - messages = `{}`" \
-                   "\n - media = `{}`" \
-                   "\n - other = `{}`" \
-                   "\n - previews = `{}`" \
-                   "\n - all = `{}`".format(restr.messages, restr.media, restr.other, restr.preview,
+            res += "\n - پیام = `{}`" \
+                   "\n - مدیا = `{}`" \
+                   "\n - دیگر = `{}`" \
+                   "\n - پیشنمایش = `{}`" \
+                   "\n - همه = `{}`".format(restr.messages, restr.media, restr.other, restr.preview,
                                             all([restr.messages, restr.media, restr.other, restr.preview]))
     return res
 
@@ -279,7 +299,7 @@ def list_locks(bot: Bot, update: Update):
 
     update.effective_message.reply_text(res, parse_mode=ParseMode.MARKDOWN)
 
-
+    
 def __migrate__(old_chat_id, new_chat_id):
     sql.migrate_chat(old_chat_id, new_chat_id)
 
@@ -289,26 +309,29 @@ def __chat_settings__(chat_id, user_id):
 
 
 __help__ = """
- - /locktypes: a list of possible locktypes
+ میگن گپتو قفل کن 
+ تهمت تب چی بودن به کسی نزن🤣
 
-*Admin only:*
- - /lock <type>: lock items of a certain type (not available in private)
- - /unlock <type>: unlock items of a certain type (not available in private)
- - /locks: the current list of locks in this chat.
-
-Locks can be used to restrict a group's users.
-eg:
-Locking urls will auto-delete all messages with urls which haven't been whitelisted, locking stickers will delete all \
-stickers, etc.
-Locking bots will stop non-admins from adding bots to the chat.
+- [!قفلها] 
+[/locktypes] 👉 لیست قفل ها
+———————————————————--
+*فقط ادمین ها*
+- [!قفل] (نام_بخش)
+[/lock] (LockName) 👉 قفل بخش
+———————————————————--
+- [!بازکردن] (نام_بخش)
+[/unlock] (LockName) 👉 بازکردن بخش
+———————————————————--
+- [!وضعیت] 
+[/locks] 👉 وضعیت قفل ها
 """
 
-__mod_name__ = "Locks"
+__mod_name__ = "قفل🔐"
 
-LOCKTYPES_HANDLER = DisableAbleCommandHandler("locktypes", locktypes)
-LOCK_HANDLER = CommandHandler("lock", lock, pass_args=True, filters=Filters.group)
-UNLOCK_HANDLER = CommandHandler("unlock", unlock, pass_args=True, filters=Filters.group)
-LOCKED_HANDLER = CommandHandler("locks", list_locks, filters=Filters.group)
+LOCKTYPES_HANDLER = DisableAbleCommandHandler(["قفلها", "locktypes"], locktypes)
+LOCK_HANDLER = CommandHandler(["قفل", "lock"], lock, pass_args=True, filters=Filters.group)
+UNLOCK_HANDLER = CommandHandler(["بازکردن", "unlock"], unlock, pass_args=True, filters=Filters.group)
+LOCKED_HANDLER = CommandHandler(["وضعیت", "locks"], list_locks, filters=Filters.group)
 
 dispatcher.add_handler(LOCK_HANDLER)
 dispatcher.add_handler(UNLOCK_HANDLER)
