@@ -240,7 +240,7 @@ def extract_time(message, time_val):
         unit = time_val[-1]
         time_num = time_val[:-1]  # type: str
         if not time_num.isdigit():
-            message.reply_text("Invalid time amount specified.")
+            message.reply_text("زمان وارد شده اشتباه.")
             return ""
 
         if unit == 'm':
@@ -254,5 +254,5 @@ def extract_time(message, time_val):
             return ""
         return bantime
     else:
-        message.reply_text("Invalid time type specified. Expected m,h, or d, got: {}".format(time_val[-1]))
+        message.reply_text("فرمت زمان وارد شده اشتباه ، من انتضار دقیقه و ساعت و روز رو دارم شما: {} وارد کردی!".format(time_val[-1]))
         return ""
