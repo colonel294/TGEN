@@ -31,8 +31,8 @@ def purge(bot: Bot, update: Update, args: List[str]) -> str:
                     bot.deleteMessage(chat.id, m_id)
                 except BadRequest as err:
                     if err.message == "Message can't be deleted":
-                        bot.send_message(chat.id, "ببخشید😢 .نمیتونم همه پیامارو پاک کنم ، شاید پیام قدیمیه🧐 "
-                                                  "یا شاید من اجازشو ندارم.")
+                        bot.send_message(chat.id, "Cannot delete all messages. The messages may be too old, I might "
+                                                  "not have delete rights, or this might not be a supergroup.")
 
                     elif err.message != "Message to delete not found":
                         LOGGER.exception("Error while purging chat messages.")
@@ -41,22 +41,21 @@ def purge(bot: Bot, update: Update, args: List[str]) -> str:
                 msg.delete()
             except BadRequest as err:
                 if err.message == "Message can't be deleted":
-                    bot.send_message(chat.id, "ببخشید😢 .نمیتونم همه پیامارو پاک کنم ، شاید پیام قدیمیه🧐 "
-                                              "یا شاید من اجازشو ندارم..")
+                    bot.send_message(chat.id, "Cannot delete all messages. The messages may be too old, I might "
+                                              "not have delete rights, or this might not be a supergroup.")
 
                 elif err.message != "Message to delete not found":
                     LOGGER.exception("Error while purging chat messages.")
 
-            bot.send_message(chat.id, "پیامارو سوزوندم فرمانده😎.")
             return "<b>{}:</b>" \
-                   "\n#پاکسازی" \
-                   "\n<b>توسط:</b> {}" \
-                   "\nتعداد <code>{}</code> پیام.".format(html.escape(chat.title),
+                   "\n#PURGE" \
+                   "\n<b>Admin:</b> {}" \
+                   "\nPurged <code>{}</code> messages.".format(html.escape(chat.title),
                                                                mention_html(user.id, user.first_name),
                                                                delete_to - message_id)
 
     else:
-        msg.reply_text("اومم رو یه پیام ریپلی بزن من بدونم تا کجا قراره ادامه بدم🙃")
+        msg.reply_text("Reply to a message to select where to start purging from.")
 
     return ""
 
@@ -72,37 +71,27 @@ def del_message(bot: Bot, update: Update) -> str:
             update.effective_message.reply_to_message.delete()
             update.effective_message.delete()
             return "<b>{}:</b>" \
-                   "\n#پاک" \
-                   "\n<b>توسط:</b> {}" \
-                   "\nپیام پاک شد.".format(html.escape(chat.title),
+                   "\n#DEL" \
+                   "\n<b>Admin:</b> {}" \
+                   "\nMessage deleted.".format(html.escape(chat.title),
                                                mention_html(user.id, user.first_name))
     else:
-        update.effective_message.reply_text("وجدانن؟")
+        update.effective_message.reply_text("Whadya want to delete?")
 
     return ""
 
 
 __help__ = """
-پیام های اضافه زیاد ، وقت کم؟ برای من مشکلی نیس😇
-*فقط ادمین ها* 
-- [!پاک] (ریپلی)
-[/del] (Reply) 👉 حذف تک P.m
-———————————————————--
-- [!پاکسازی] (ریپلی) (عدد)
-[/purge] (Reply) (INT)👉پاکسازی کلی
-———————————————————--
-1 : قسمت پاکسازی ریپلی الزامی هست❗️
-2 : روی اخرین پیامی که میخوای حذف شه ریپلی بزنی
-من از جدید ترین پیام گروه تا وقتی به پیام ریپلی شده برسم
-پاکسازی میکنم🙂
-3 : اگه عدد هم بدی {ریپلی الزامی} من به تعدادی که 
-اشاره کردی پاک میکنم🤓
+*Admin only:*
+ - /del: deletes the message you replied to
+ - /purge: deletes all messages between this and the replied to message.
+ - /purge <integer X>: deletes the replied message, and X messages following it.
 """
 
-__mod_name__ = "پاک کن🖱"
+__mod_name__ = "Purges"
 
-DELETE_HANDLER = CommandHandler(["پاک", "del"], del_message, filters=Filters.group)
-PURGE_HANDLER = CommandHandler(["پاکسازی", "purge"], purge, filters=Filters.group, pass_args=True)
+DELETE_HANDLER = CommandHandler("del", del_message, filters=Filters.group)
+PURGE_HANDLER = CommandHandler("purge", purge, filters=Filters.group, pass_args=True)
 
 dispatcher.add_handler(DELETE_HANDLER)
 dispatcher.add_handler(PURGE_HANDLER)

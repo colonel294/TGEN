@@ -1,3 +1,4 @@
+
 import json
 from pprint import pprint
 
@@ -48,10 +49,10 @@ def translate(bot: Bot, update: Update):
 
 
 __help__ = """
- این یه قابلیت در حال تست هست . والبته برا زمانی که سرورم بهتر بشه!!!
+ - /t: while replying to a message, will reply with a grammar corrected version
 """
 
-__mod_name__ = "مترجم"
+__mod_name__ = "Translator"
 
 
 TRANSLATE_HANDLER = CommandHandler('t', translate)

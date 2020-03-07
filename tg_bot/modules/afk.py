@@ -22,7 +22,7 @@ def afk(bot: Bot, update: Update):
         reason = ""
 
     sql.set_afk(update.effective_user.id, reason)
-    update.effective_message.reply_text("{} در دسترس نیس!".format(update.effective_user.first_name))
+    update.effective_message.reply_text("{} is away from the keyboard ! ".format(update.effective_user.first_name))
 
 
 @run_async
@@ -34,14 +34,14 @@ def no_longer_afk(bot: Bot, update: Update):
 
     res = sql.rm_afk(user.id)
     if res:
-        update.effective_message.reply_text("{} الان در دسترسه!".format(update.effective_user.first_name))
+        update.effective_message.reply_text("{} Not far from the keyboard now !".format(update.effective_user.first_name))
 
 
 @run_async
 def reply_afk(bot: Bot, update: Update):
     message = update.effective_message  # type: Optional[Message]
-    entities = message.parse_entities([MessageEntity.TEXT_MENTION, MessageEntity.MENTION])
-    if message.entities and entities:
+    if message.entities and message.parse_entities([MessageEntity.TEXT_MENTION, MessageEntity.MENTION]):
+        entities = message.parse_entities([MessageEntity.TEXT_MENTION, MessageEntity.MENTION])
         for ent in entities:
             if ent.type == MessageEntity.TEXT_MENTION:
                 user_id = ent.user.id
@@ -59,34 +59,24 @@ def reply_afk(bot: Bot, update: Update):
                 return
 
             if sql.is_afk(user_id):
-                valid, reason = sql.check_afk_status(user_id)
-                if valid:
-                    if not reason:
-                        res = "{} در دسترس نیس!".format(fst_name)
-                    else:
-                        res = "{} در دسترس نیست ، گفته بخاطر اینکه:\n{}".format(fst_name, reason)
-                    message.reply_text(res)
-
-
-def __gdpr__(user_id):
-    sql.rm_afk(user_id)
+                user = sql.check_afk_status(user_id)
+                if not user.reason:
+                    res = "{} is away from the keyboard ! reason :\n{} ".format(fst_name)
+                else:
+                    res = "{} is away from the keyboard ! reason :\n{}. ".format(fst_name, user.reason)
+                message.reply_text(res)
 
 
 __help__ = """
- نت خرابه 😑 یا نمیتونی آن باشی
-خب من بنظر فرشته نجاتتم😇
+ - /afk <reason>: mark yourself as AFK.
+ - brb <reason>: same as the afk command - but not a command.
 
-- [!دایورت] (دلیل)
-[/afk] (Reason) 👉 کلید دور از دسترس
-———————————————————--
-1 : وقتی خودتو afk علامت بزنی ، من 
-به هرشخصی که تگت کنه میگم نیستی
-2 : این حالت با اولین پیام تو در گپ خاموش میشه
+When marked as AFK, any mentions will be replied to with a message to say you're not available!
 """
 
-__mod_name__ = "No Signal🚫"
+__mod_name__ = "AFK"
 
-AFK_HANDLER = DisableAbleCommandHandler(["دایورت", "afk"], afk)
+AFK_HANDLER = DisableAbleCommandHandler("afk", afk)
 AFK_REGEX_HANDLER = DisableAbleRegexHandler("(?i)brb", afk, friendly="afk")
 NO_AFK_HANDLER = MessageHandler(Filters.all & Filters.group, no_longer_afk)
 AFK_REPLY_HANDLER = MessageHandler(Filters.entity(MessageEntity.MENTION) | Filters.entity(MessageEntity.TEXT_MENTION),

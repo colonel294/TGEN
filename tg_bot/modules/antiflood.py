@@ -35,21 +35,20 @@ def check_flood(bot: Bot, update: Update) -> str:
 
     try:
         chat.kick_member(user.id)
-        msg.reply_text("من همرو دوست دارم . ولی توو ، تو فقط باعث ناامیدی گونه بشریتی  "
-                       "گمشو بیرون😒.")
+        msg.reply_text("dont disturb others you are No need for this group anymore...")
 
         return "<b>{}:</b>" \
-               "\n#بن_شد" \
-               "\n<b>کاربر:</b> {}" \
-               "\nاسپم داخل گپ.".format(html.escape(chat.title),
+               "\n#BANNED" \
+               "\n<b>User:</b> {}" \
+               "\nFlooded the group.".format(html.escape(chat.title),
                                              mention_html(user.id, user.first_name))
 
     except BadRequest:
-        msg.reply_text("من نمیتونم کسیو بیرون کنم اینجا .اجازشو ندارم! پس تا اونموقع حالت ضد تکرار خاموش.")
+        msg.reply_text("You cannot use this service as long as you do not give me Permissions.")
         sql.set_flood(chat.id, 0)
         return "<b>{}:</b>" \
-               "\n#اطلاعات" \
-               "\nاجازه اخراج کسیو ندارم ، تا اونموقع ضد تکرار خاموش.".format(chat.title)
+               "\n#INFO" \
+               "\nDon't have kick permissions, so automatically disabled antiflood.".format(chat.title)
 
 
 @run_async
@@ -63,35 +62,35 @@ def set_flood(bot: Bot, update: Update, args: List[str]) -> str:
 
     if len(args) >= 1:
         val = args[0].lower()
-        if val == "خاموش" or val == "off" or val == "0":
+        if val == "off" or val == "no" or val == "0":
             sql.set_flood(chat.id, 0)
-            message.reply_text("مسلسل خاموش")
+            message.reply_text("I will no longer dismiss those who flood.")
 
         elif val.isdigit():
             amount = int(val)
             if amount <= 0:
                 sql.set_flood(chat.id, 0)
-                message.reply_text("مسلسل خاموش")
+                message.reply_text("I will no longer dismiss those who flood.")
                 return "<b>{}:</b>" \
-                       "\n#ضدتکرار" \
-                       "\n<b>توسط:</b> {}" \
-                       "\nخاموش شد.".format(html.escape(chat.title), mention_html(user.id, user.first_name))
+                       "\n#SETFLOOD" \
+                       "\n<b>Admin:</b> {}" \
+                       "\nDisabled antiflood.".format(html.escape(chat.title), mention_html(user.id, user.first_name))
 
             elif amount < 3:
-                message.reply_text("حالت ضد تکرار یا باید 0 باشه یا یه عددی بزرگ تر از 3")
+                message.reply_text("Antiflood has to be either 0 (disabled), or a number bigger than 3!")
                 return ""
 
             else:
                 sql.set_flood(chat.id, amount)
-                message.reply_text("حالت ضد تکرار آبدیت شد و بعد از {} تکرار ،اخراج".format(amount))
+                message.reply_text("Message control {} has been added to count ".format(amount))
                 return "<b>{}:</b>" \
-                       "\n#ضدتکرار" \
-                       "\n<b>توسط:</b> {}" \
-                       "\nتنظیم شد به <code>{}</code> پیام متوالی.".format(html.escape(chat.title),
+                       "\n#SETFLOOD" \
+                       "\n<b>Admin:</b> {}" \
+                       "\nSet antiflood to <code>{}</code>.".format(html.escape(chat.title),
                                                                     mention_html(user.id, user.first_name), amount)
 
         else:
-            message.reply_text("متوجه نشدم . یا دستور خاموش یا یه عدد برای تنظیمش بفرست.")
+            message.reply_text("I don't understand what you're saying .... Either use the number or use Yes-No")
 
     return ""
 
@@ -102,10 +101,10 @@ def flood(bot: Bot, update: Update):
 
     limit = sql.get_flood_limit(chat.id)
     if limit == 0:
-        update.effective_message.reply_text("من در حال حاضر میزان تکرار رو کنترل نمیکنم")
+        update.effective_message.reply_text("I am not doing message control right now!")
     else:
         update.effective_message.reply_text(
-            "حالت ضد تکرار من فعاله و کسانی که بیش از {} پیام متوالی بفرستن اخراج میشن!.".format(limit))
+            " {} I'll leave the bun to the person who sends the message more at the same time.".format(limit))
 
 
 def __migrate__(old_chat_id, new_chat_id):
@@ -115,31 +114,23 @@ def __migrate__(old_chat_id, new_chat_id):
 def __chat_settings__(chat_id, user_id):
     limit = sql.get_flood_limit(chat_id)
     if limit == 0:
-        return "در حال حاضر سکان این قابلیت دستم نیس!"
+        return "*Not* currently enforcing flood control."
     else:
-        return "حد تکرار یه پیام تو این گپ {} هست!".format(limit)
+        return " The message control is set to `{}`.".format(limit)
 
 
 __help__ = """
-گپ مورد حمله قرار میگیره؟ اسپمرها 
-همیشه گپو میبندن به رگبار
-من سنگرت میشم فرمانده💂‍♀️
+ - /flood: To know your current message control..
 
-- [!مسلسل] 
-[/flood] 👉 تعداد و وضعیت حد
-———————————————————--
-*فقط ادمین ها* 
-- [!ضدتکرار] (خاموش و 0) یا (عدد)
-[/setflood] (off & 0) OR (INT) 👉
-کلید ضدتکرار
-———————————————————--
+*Admin only:*
+ - /setflood <int/'no'/'off'>: enables or disables flood control
 """
 
-__mod_name__ = "مسلسل"
+__mod_name__ = "AntiFlood"
 
 FLOOD_BAN_HANDLER = MessageHandler(Filters.all & ~Filters.status_update & Filters.group, check_flood)
-SET_FLOOD_HANDLER = CommandHandler(["ضدتکرار", "setflood"], set_flood, pass_args=True, filters=Filters.group)
-FLOOD_HANDLER = CommandHandler(["مسلسل", "flood"], flood, filters=Filters.group)
+SET_FLOOD_HANDLER = CommandHandler("setflood", set_flood, pass_args=True, filters=Filters.group)
+FLOOD_HANDLER = CommandHandler("flood", flood, filters=Filters.group)
 
 dispatcher.add_handler(FLOOD_BAN_HANDLER, FLOOD_GROUP)
 dispatcher.add_handler(SET_FLOOD_HANDLER)
