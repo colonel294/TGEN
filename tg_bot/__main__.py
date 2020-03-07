@@ -1,3 +1,4 @@
+import datetime
 import importlib
 import re
 from typing import Optional, List
@@ -6,7 +7,7 @@ from telegram import Message, Chat, Update, Bot, User
 from telegram import ParseMode, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.error import Unauthorized, BadRequest, TimedOut, NetworkError, ChatMigrated, TelegramError
 from telegram.ext import CommandHandler, Filters, MessageHandler, CallbackQueryHandler
-from telegram.ext.dispatcher import run_async, DispatcherHandlerStop
+from telegram.ext.dispatcher import run_async, DispatcherHandlerStop, Dispatcher
 from telegram.utils.helpers import escape_markdown
 
 from tg_bot import dispatcher, updater, TOKEN, WEBHOOK, OWNER_ID, DONATION_LINK, CERT_PATH, PORT, URL, LOGGER, \
@@ -17,43 +18,55 @@ from tg_bot.modules import ALL_MODULES
 from tg_bot.modules.helper_funcs.chat_status import is_user_admin
 from tg_bot.modules.helper_funcs.misc import paginate_modules
 
-PM_START_TEXT = """
-hoi {}, my name is {}! if you have any questions about how to use me please give me /help... 
+PM_START_TEXT = """سلام {} . من {} هستم ! 😎
 
-im a group manager bot maintained by  [this person](tg://user?id={}).
+اگه منو نمیشناسی . من یه ربات پیشرفته محافظت و مدیریت گروهم  \
+یکم رک باشم باهات زبان برنامه نویسیم پایتون هست ! واس همین جزو سریع ترین ربات ها تو عملکردم . پس در نیوفت باهام \
+چون هرکه با ما در افتاد....؟
 
-My future updates will be put into This Channel - @MarieChechi & My Support Group @InFoTelGroup.
+اگه سوالی بود 🤔، نظری، پیشنهادی☺️، انتقادی😱 میتونی با [سازنده من](t.me/colonel294)حرف بزنی 🗣\
 
-This is my [Deploy Code](https://heroku.com/deploy?template=https://github.com/TGExplore/Marie-2.0-English),
-you can create clone same like me..
+من میتونم تکثیر بشم 👥، با تیم من ارتباط برقرار کن تا بتونی یه کپی از من با اسمی که میخوای داشته باشی🙂.
 
-For more commands click /help...
+خوب برای شروع  کار کردن میتونی از دستور /help استفاده کنی.
 
-**Keep in mind that any changes you DO do to the source have to be on github, as per the license.**
-
+اگه از من خوشت اومد یاا دوس داشتی من بتونم تو این دنیای وحشی زنده بمونم میتونی با دستور /donate کمکم کنی🤑 !
 """
 
 HELP_STRINGS = """
+دوباره سلام😄 اسم من *{}* . اصلا دوس دارم اسممو بگم هی 
+من یه محافظ پیشرفتم😎
+میدونم خیلی کنجکاوید که من چه کارایی انجام میدم ولی لازم 
+نیس زیاد به مغزتون فشار بیارید چون میتونید با استفاده از
+موارد زیر با قابلیتای من آشنا بشید😌 
 
-Hello! my name *{}*.
 
-*Main* available commands:
- - /start: Start the bot...
- - /help: help....
- - /donate: To find out more about donating!
- - /settings:
-   - in PM: To find out what SETTINGS you have set....
-   - in a group:
-
+این لیست دستورات *اصلی*  منه:
+ - /start: ربات و استارت میکنه.
+ ———————————————————--
+ - /help: همین پیامی که داری میبینی رو نشون میده😆.
+———————————————————--
+ - /help <نام بخش>  
+ اطلاعاتی راجب اون بخشی که میخوای رو بهت میده!
+ ———————————————————--
+ - /donate: اطلاعاتی راجب اینکه چطور میتونی کمکم کنی🙂!
+ ———————————————————--
+ - !تنظبمات:
+   - داخل pv : اطلاعاتی راجب تنظیمات همه قسمت های من در اختیارت میزاره.
+   - داخل گپت : تمام تنظیماتی که برای گپ اعمال شده رو داخل pv برات میفرسته.
+———————————————————--
 {}
-And the following:
-""".format(dispatcher.bot.first_name, "" if not ALLOW_EXCL else "\nAll of the following commands  / or ! can  be used...\n")
+میرسیم به بخش جالب .کاربرد های من:
+""".format(dispatcher.bot.first_name, "" if not ALLOW_EXCL else "\nبهتره دستورات فارسی با ! و خارجی ها با / اجرا بشن.\n")
 
-DONATE_STRING = """Heya, glad to hear you want to donate!
-It took lots of work for [my creator](t.me/SonOfLars) to get me to where I am now, and every donation helps \
-motivate him to make me even better. All the donation money will go to a better VPS to host me, and/or beer \
-(see his bio!). He's just a poor student, so every little helps!
-There are two ways of paying him; [PayPal](paypal.me/PaulSonOfLars), or [Monzo](monzo.me/paulnionvestergaardlarsen)."""
+DONATE_STRING = """واو 😍! خیلی خوشحال شدم که میبینم آدم هایی هنوز آدم هایی مثل تو هستن 
+حقیقتا خیلی زمان برد⏱ تا  [سازنده من](t.me/colonel294) بتونه منو به اینجایی که هستم برسونه  
+یکم تشویق کردنش میتونه برای من یه هاست بهتر تهیه کنه تا همیشه فعال باشم یا شایدم یه پاکت بهمن 
+میتونی یکی شبیه من با اسمی که میخوای رو درخواست بدی ! بهش پیام بده
+
+یا اگه دوستای زیادی داری برای [کانالش](https://t.me/TarahanBartar_Official) عضو بیار😘
+کاری از تیم [Tarhan_Bartar🖥](https://t.me/TarahanBartar_Official)
+"""
 
 IMPORTED = {}
 MIGRATEABLE = []
@@ -65,6 +78,8 @@ DATA_EXPORT = []
 
 CHAT_SETTINGS = {}
 USER_SETTINGS = {}
+
+GDPR = []
 
 for module_name in ALL_MODULES:
     imported_module = importlib.import_module("tg_bot.modules." + module_name)
@@ -85,6 +100,9 @@ for module_name in ALL_MODULES:
 
     if hasattr(imported_module, "__stats__"):
         STATS.append(imported_module)
+
+    if hasattr(imported_module, "__gdpr__"):
+        GDPR.append(imported_module)
 
     if hasattr(imported_module, "__user_info__"):
         USER_INFO.append(imported_module)
@@ -145,7 +163,7 @@ def start(bot: Bot, update: Update, args: List[str]):
                 PM_START_TEXT.format(escape_markdown(first_name), escape_markdown(bot.first_name), OWNER_ID),
                 parse_mode=ParseMode.MARKDOWN)
     else:
-        update.effective_message.reply_text("waked up😏😏😏")
+        update.effective_message.reply_text("جان؟ 🧐")
 
 
 # for test purposes
@@ -187,12 +205,12 @@ def help_button(bot: Bot, update: Update):
     try:
         if mod_match:
             module = mod_match.group(1)
-            text = "Here is the help for the *{}* module:\n".format(HELPABLE[module].__mod_name__) \
+            text = "*{}* :\n".format(HELPABLE[module].__mod_name__) \
                    + HELPABLE[module].__help__
             query.message.reply_text(text=text,
                                      parse_mode=ParseMode.MARKDOWN,
                                      reply_markup=InlineKeyboardMarkup(
-                                         [[InlineKeyboardButton(text="Back", callback_data="help_back")]]))
+                                         [[InlineKeyboardButton(text="عقب⬅️", callback_data="help_back")]]))
 
         elif prev_match:
             curr_page = int(prev_match.group(1))
@@ -235,18 +253,18 @@ def get_help(bot: Bot, update: Update):
     # ONLY send help in PM
     if chat.type != chat.PRIVATE:
 
-        update.effective_message.reply_text("Contact me in PM to get the list of possible commands.",
+        update.effective_message.reply_text("اومم میبخشیدا  ازین دستور باید تو pv من استفاده کنی.",
                                             reply_markup=InlineKeyboardMarkup(
-                                                [[InlineKeyboardButton(text="Help",
+                                                [[InlineKeyboardButton(text="راهنما",
                                                                        url="t.me/{}?start=help".format(
                                                                            bot.username))]]))
         return
 
     elif len(args) >= 2 and any(args[1].lower() == x for x in HELPABLE):
         module = args[1].lower()
-        text = "Here is the available help for the *{}* module:\n".format(HELPABLE[module].__mod_name__) \
+        text = "اینم لیست اطلاعات برای قسمت *{}* :\n".format(HELPABLE[module].__mod_name__) \
                + HELPABLE[module].__help__
-        send_help(chat.id, text, InlineKeyboardMarkup([[InlineKeyboardButton(text="Back", callback_data="help_back")]]))
+        send_help(chat.id, text, InlineKeyboardMarkup([[InlineKeyboardButton(text="عقب⬅️", callback_data="help_back")]]))
 
     else:
         send_help(chat.id, HELP_STRINGS)
@@ -257,24 +275,24 @@ def send_settings(chat_id, user_id, user=False):
         if USER_SETTINGS:
             settings = "\n\n".join(
                 "*{}*:\n{}".format(mod.__mod_name__, mod.__user_settings__(user_id)) for mod in USER_SETTINGS.values())
-            dispatcher.bot.send_message(user_id, "These are your current settings:" + "\n\n" + settings,
+            dispatcher.bot.send_message(user_id, "اینا تنظیماتی هستن که خواستی:" + "\n\n" + settings,
                                         parse_mode=ParseMode.MARKDOWN)
 
         else:
-            dispatcher.bot.send_message(user_id, "Seems like there aren't any user specific settings available :'(",
+            dispatcher.bot.send_message(user_id, " تنظیمات شخصی خاصی اعتمال نشده🧐:",
                                         parse_mode=ParseMode.MARKDOWN)
 
     else:
         if CHAT_SETTINGS:
             chat_name = dispatcher.bot.getChat(chat_id).title
             dispatcher.bot.send_message(user_id,
-                                        text="Which module would you like to check {}'s settings for?".format(
+                                        text="تنظیمات کدوم {} گپ رو میخوای ببینی؟".format(
                                             chat_name),
                                         reply_markup=InlineKeyboardMarkup(
                                             paginate_modules(0, CHAT_SETTINGS, "stngs", chat=chat_id)))
         else:
-            dispatcher.bot.send_message(user_id, "Seems like there aren't any chat settings available :'(\nSend this "
-                                                 "in a group chat you're admin in to find its current settings!",
+            dispatcher.bot.send_message(user_id, "اینطور که پیداس تنظیمات گپ تو دیتا بیس من نیست! :\nاین دستور  "
+                                                 "داخل گپی بفرست که من و  تو داخلش ادمینیم تا تنظیمات بدم بهت",
                                         parse_mode=ParseMode.MARKDOWN)
 
 
@@ -291,21 +309,22 @@ def settings_button(bot: Bot, update: Update):
             chat_id = mod_match.group(1)
             module = mod_match.group(2)
             chat = bot.get_chat(chat_id)
-            text = "*{}* has the following settings for the *{}* module:\n\n".format(escape_markdown(chat.title),
-                                                                                     CHAT_SETTINGS[module].__mod_name__) + \
+            text = "تنظیمات *{}* در مورد بخش  *{}* عبارتند از:\n\n".format(escape_markdown(chat.title),
+                                                                                     CHAT_SETTINGS[
+                                                                                         module].__mod_name__) + \
                    CHAT_SETTINGS[module].__chat_settings__(chat_id, user.id)
             query.message.reply_text(text=text,
                                      parse_mode=ParseMode.MARKDOWN,
                                      reply_markup=InlineKeyboardMarkup(
-                                         [[InlineKeyboardButton(text="Back",
+                                         [[InlineKeyboardButton(text="عقب⬅️",
                                                                 callback_data="stngs_back({})".format(chat_id))]]))
 
         elif prev_match:
             chat_id = prev_match.group(1)
             curr_page = int(prev_match.group(2))
             chat = bot.get_chat(chat_id)
-            query.message.reply_text("Hi there! There are quite a few settings for {} - go ahead and pick what "
-                                     "you're interested in.".format(chat.title),
+            query.message.reply_text("طبق دستورتون اینم تنظیمات بخش {} ! "
+                                     "هرکدومو میخوای وردار.".format(chat.title),
                                      reply_markup=InlineKeyboardMarkup(
                                          paginate_modules(curr_page - 1, CHAT_SETTINGS, "stngs",
                                                           chat=chat_id)))
@@ -314,8 +333,8 @@ def settings_button(bot: Bot, update: Update):
             chat_id = next_match.group(1)
             next_page = int(next_match.group(2))
             chat = bot.get_chat(chat_id)
-            query.message.reply_text("Hi there! There are quite a few settings for {} - go ahead and pick what "
-                                     "you're interested in.".format(chat.title),
+            query.message.reply_text("طبق دستورتون اینم تنظیمات بخش {} ! "
+                                     "هرکدومو میخوای وردار.".format(chat.title),
                                      reply_markup=InlineKeyboardMarkup(
                                          paginate_modules(next_page + 1, CHAT_SETTINGS, "stngs",
                                                           chat=chat_id)))
@@ -323,8 +342,8 @@ def settings_button(bot: Bot, update: Update):
         elif back_match:
             chat_id = back_match.group(1)
             chat = bot.get_chat(chat_id)
-            query.message.reply_text(text="Hi there! There are quite a few settings for {} - go ahead and pick what "
-                                          "you're interested in.".format(escape_markdown(chat.title)),
+            query.message.reply_text(text="طبق دستورتون اینم تنظیمات بخش {} ! "
+                                          "هرکدومو میخوای وردار.".format(escape_markdown(chat.title)),
                                      parse_mode=ParseMode.MARKDOWN,
                                      reply_markup=InlineKeyboardMarkup(paginate_modules(0, CHAT_SETTINGS, "stngs",
                                                                                         chat=chat_id)))
@@ -353,14 +372,14 @@ def get_settings(bot: Bot, update: Update):
     # ONLY send settings in PM
     if chat.type != chat.PRIVATE:
         if is_user_admin(chat, user.id):
-            text = "Click here to get this chat's settings, as well as yours."
+            text = "برای تنظیم گپ لطفا کلیک کن🙂."
             msg.reply_text(text,
                            reply_markup=InlineKeyboardMarkup(
-                               [[InlineKeyboardButton(text="Settings",
+                               [[InlineKeyboardButton(text="تنظیمات",
                                                       url="t.me/{}?start=stngs_{}".format(
                                                           bot.username, chat.id))]]))
         else:
-            text = "Click here to check your settings."
+            text = "برای تنظیم گپ لطفا کلیک کن🙂."
 
     else:
         send_settings(chat.id, user.id, True)
@@ -375,17 +394,17 @@ def donate(bot: Bot, update: Update):
         update.effective_message.reply_text(DONATE_STRING, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
 
         if OWNER_ID != 254318997 and DONATION_LINK:
-            update.effective_message.reply_text("You can also donate to the person currently running me "
-                                                "[here]({})".format(DONATION_LINK),
+            update.effective_message.reply_text("لطفا هرچقد میتونی منو معروف کن!!اینم لینک "
+                                                "[کانالم]({})".format(DONATION_LINK),
                                                 parse_mode=ParseMode.MARKDOWN)
 
     else:
         try:
             bot.send_message(user.id, DONATE_STRING, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
 
-            update.effective_message.reply_text("I've PM'ed you about donating to my creator!")
+            update.effective_message.reply_text("او مرسی ! بیا p.v بگم بهت چجوری !")
         except Unauthorized:
-            update.effective_message.reply_text("Contact me in PM first to get donation information.")
+            update.effective_message.reply_text("او مرسی! خواهشا اول برام یه پیام p.v بفرست بعد دوباره این دستورو بزن.")
 
 
 def migrate_chats(bot: Bot, update: Update):
@@ -408,13 +427,13 @@ def migrate_chats(bot: Bot, update: Update):
 
 
 def main():
-    test_handler = CommandHandler("test", test)
+    test_handler = CommandHandler("", test)
     start_handler = CommandHandler("start", start, pass_args=True)
 
     help_handler = CommandHandler("help", get_help)
     help_callback_handler = CallbackQueryHandler(help_button, pattern=r"help_")
 
-    settings_handler = CommandHandler("settings", get_settings)
+    settings_handler = CommandHandler("تنظیمات", get_settings)
     settings_callback_handler = CallbackQueryHandler(settings_button, pattern=r"stngs_")
 
     donate_handler = CommandHandler("donate", donate)
@@ -430,6 +449,9 @@ def main():
     dispatcher.add_handler(donate_handler)
 
     # dispatcher.add_error_handler(error_callback)
+
+    # add antiflood processor
+    Dispatcher.process_update = process_update
 
     if WEBHOOK:
         LOGGER.info("Using webhooks.")
@@ -448,6 +470,61 @@ def main():
         updater.start_polling(timeout=15, read_latency=4)
 
     updater.idle()
+
+
+CHATS_CNT = {}
+CHATS_TIME = {}
+
+
+def process_update(self, update):
+    # An error happened while polling
+    if isinstance(update, TelegramError):
+        try:
+            self.dispatch_error(None, update)
+        except Exception:
+            self.logger.exception('An uncaught error was raised while handling the error')
+        return
+
+    now = datetime.datetime.utcnow()
+    cnt = CHATS_CNT.get(update.effective_chat.id, 0)
+
+    t = CHATS_TIME.get(update.effective_chat.id, datetime.datetime(1970, 1, 1))
+    if t and now > t + datetime.timedelta(0, 1):
+        CHATS_TIME[update.effective_chat.id] = now
+        cnt = 0
+    else:
+        cnt += 1
+
+    if cnt > 10:
+        return
+
+    CHATS_CNT[update.effective_chat.id] = cnt
+    for group in self.groups:
+        try:
+            for handler in (x for x in self.handlers[group] if x.check_update(update)):
+                handler.handle_update(update, self)
+                break
+
+        # Stop processing with any other handler.
+        except DispatcherHandlerStop:
+            self.logger.debug('Stopping further handlers due to DispatcherHandlerStop')
+            break
+
+        # Dispatch any error.
+        except TelegramError as te:
+            self.logger.warning('A TelegramError was raised while processing the Update')
+
+            try:
+                self.dispatch_error(update, te)
+            except DispatcherHandlerStop:
+                self.logger.debug('Error handler stopped further handlers')
+                break
+            except Exception:
+                self.logger.exception('An uncaught error was raised while handling the error')
+
+        # Errors should not stop the thread.
+        except Exception:
+            self.logger.exception('An uncaught error was raised while processing the update')
 
 
 if __name__ == '__main__':
