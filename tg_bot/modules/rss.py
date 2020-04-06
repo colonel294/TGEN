@@ -46,9 +46,9 @@ def show_url(bot, update, args):
             else:
                 bot.send_message(chat_id=tg_chat_id, text=feed_message, parse_mode=ParseMode.HTML)
         else:
-            update.effective_message.reply_text("این ی خوراک اینترنتی نیس!")
+            update.effective_message.reply_text("This link is not an RSS Feed link")
     else:
-        update.effective_message.reply_text("نمیتونم پیداش کنم!")
+        update.effective_message.reply_text("URL missing")
 
 
 def list_urls(bot, update):
@@ -63,12 +63,12 @@ def list_urls(bot, update):
 
     # check if the length of the message is too long to be posted in 1 chat bubble
     if len(final_content) == 0:
-        bot.send_message(chat_id=tg_chat_id, text="این گپ آدرس فید ثبت شده ایی نداره هنوز!")
+        bot.send_message(chat_id=tg_chat_id, text="This chat is not subscribed to any links")
     elif len(final_content) <= constants.MAX_MESSAGE_LENGTH:
-        bot.send_message(chat_id=tg_chat_id, text="این گپ اشتراک داره با لینک فید های زیر:\n" + final_content)
+        bot.send_message(chat_id=tg_chat_id, text="This chat is subscribed to the following links:\n" + final_content)
     else:
         bot.send_message(chat_id=tg_chat_id, parse_mode=ParseMode.HTML,
-                         text="<b>هشدار:</b> پیامتون خیلی طولانیه برا ارسال")
+                         text="<b>Warning:</b> The message is too long to be sent")
 
 
 @user_admin
@@ -94,15 +94,15 @@ def add_url(bot, update, args):
 
             # check if there's an entry already added to DB by the same user in the same group with the same link
             if row:
-                update.effective_message.reply_text("این آدرس قبلا اضافه شده!")
+                update.effective_message.reply_text("This URL has already been added")
             else:
                 sql.add_url(tg_chat_id, tg_feed_link, tg_old_entry_link)
 
-                update.effective_message.reply_text("آدرس به لیست اشتراکتون اضافه شد!")
+                update.effective_message.reply_text("Added URL to subscription")
         else:
-            update.effective_message.reply_text("این لینک یک خوراک اینترنتی نیست عزیزم!")
+            update.effective_message.reply_text("This link is not an RSS Feed link")
     else:
-        update.effective_message.reply_text("نمیتونم پیداش کنم!!")
+        update.effective_message.reply_text("URL missing")
 
 
 @user_admin
@@ -120,13 +120,13 @@ def remove_url(bot, update, args):
             if user_data:
                 sql.remove_url(tg_chat_id, tg_feed_link)
 
-                update.effective_message.reply_text("آدرس ازز لیستتون پاک شد")
+                update.effective_message.reply_text("Removed URL from subscription")
             else:
-                update.effective_message.reply_text("شما که هنوز این پادرسو به لینک اشتراکتون اضافه نکردی")
+                update.effective_message.reply_text("You haven't subscribed to this URL yet")
         else:
-            update.effective_message.reply_text("این یه خوراک اینترنتی نیست عزیزم!")
+            update.effective_message.reply_text("This link is not an RSS Feed link")
     else:
-        update.effective_message.reply_text("نمیتونم پیداش کنم!!")
+        update.effective_message.reply_text("URL missing")
 
 
 def rss_update(bot, job):
@@ -168,7 +168,7 @@ def rss_update(bot, job):
                 if len(final_message) <= constants.MAX_MESSAGE_LENGTH:
                     bot.send_message(chat_id=tg_chat_id, text=final_message, parse_mode=ParseMode.HTML)
                 else:
-                    bot.send_message(chat_id=tg_chat_id, text="<b>هشدار:</b> این پیام خیلی طولانیه برای ارسال!",
+                    bot.send_message(chat_id=tg_chat_id, text="<b>Warning:</b> The message is too long to be sent",
                                      parse_mode=ParseMode.HTML)
         else:
             for link, title in zip(reversed(new_entry_links[-5:]), reversed(new_entry_titles[-5:])):
@@ -177,11 +177,11 @@ def rss_update(bot, job):
                 if len(final_message) <= constants.MAX_MESSAGE_LENGTH:
                     bot.send_message(chat_id=tg_chat_id, text=final_message, parse_mode=ParseMode.HTML)
                 else:
-                    bot.send_message(chat_id=tg_chat_id, text="<b>هشدار:</b> این پیام خیلی طولانیه برای ارسال!",
+                    bot.send_message(chat_id=tg_chat_id, text="<b>Warning:</b> The message is too long to be sent",
                                      parse_mode=ParseMode.HTML)
 
             bot.send_message(chat_id=tg_chat_id, parse_mode=ParseMode.HTML,
-                             text="<b>هشدار: </b>{} وقایع برای اسپم کردن گپ موندن ! با ادمینم ارتباط برقرار کنید"
+                             text="<b>Warning: </b>{} occurrences have been left out to prevent spam"
                              .format(len(new_entry_links) - 5))
 
 
@@ -216,17 +216,12 @@ def rss_set(bot, job):
 
 
 __help__ = """
-تنظیم لینک های RSS برای گپتون . لینک کردنشون با من . فقط لینک فیدتون رو بدین
+ - /addrss <link>: add an RSS link to the subscriptions.
+ - /removerss <link>: removes the RSS link from the subscriptions.
+ - /rss <link>: shows the link's data and the last entry, for testing purposes.
+ - /listrss: shows the list of rss feeds that the chat is currently subscribed to.
 
- - /addrss <لینک>: 
- لینک rss تون رو وارد کنید .
- - /removerss <لینک>: 
- با این دستور ادرس فیدتون رو پاک میکنم.
- - /rss <لینک>: 
- لینک rss رو نشون میدم و اخرین ورود بهش رو . البته برای کارای تمرینی.
- - /listrss: همه لینک های rss که باهاش اشتراک دارید رو نشون میدم.
-
-نکته: تو گروه ها . فقط ادمین ها میتونن با این بخش ها کار کنند . یوزر ها همچین اجازه ایی ندارن
+NOTE: In groups, only admins can add/remove RSS links to the group's subscription
 """
 
 __mod_name__ = "RSS Feed"

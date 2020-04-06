@@ -11,15 +11,14 @@ from telegram.ext import CommandHandler, run_async, Filters
 from telegram.utils.helpers import escape_markdown, mention_html
 
 from tg_bot import dispatcher, OWNER_ID, SUDO_USERS, SUPPORT_USERS, WHITELIST_USERS, BAN_STICKER
-from tg_bot.__main__ import GDPR
 from tg_bot.__main__ import STATS, USER_INFO
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.extraction import extract_user
 from tg_bot.modules.helper_funcs.filters import CustomFilters
 
 RUN_STRINGS = (
-    "فک کردی داری کجا میری؟🤨",
-    "چی؟؟ کجا میری؟ واقعا فرار کردی؟😆‮",
+    "Where do you think you're going?",
+    "Huh? what? did they get away?",
     "ZZzzZZzz... Huh? what? oh, just them again, nevermind.",
     "Get back here!",
     "Not so fast...",
@@ -377,33 +376,76 @@ def markdown_help(bot: Bot, update: Update):
 def stats(bot: Bot, update: Update):
     update.effective_message.reply_text("Current stats:\n" + "\n".join([mod.__stats__() for mod in STATS]))
 
+@run_async
+def stickerid(bot: Bot, update: Update):
+    msg = update.effective_message
+    if msg.reply_to_message and msg.reply_to_message.sticker:
+        update.effective_message.reply_text("Hello " +
+                                            "[{}](tg://user?id={})".format(msg.from_user.first_name, msg.from_user.id)
+                                            + ", The sticker id you are replying is :\n```" + 
+                                            escape_markdown(msg.reply_to_message.sticker.file_id) + "```",
+                                            parse_mode=ParseMode.MARKDOWN)
+    else:
+        update.effective_message.reply_text("Hello " + "[{}](tg://user?id={})".format(msg.from_user.first_name,
+                                            msg.from_user.id) + ", Please reply to sticker message to get id sticker",
+                                            parse_mode=ParseMode.MARKDOWN)
+@run_async
+def getsticker(bot: Bot, update: Update):
+    msg = update.effective_message
+    chat_id = update.effective_chat.id
+    if msg.reply_to_message and msg.reply_to_message.sticker:
+        bot.sendChatAction(chat_id, "typing")
+        update.effective_message.reply_text("Hello " + "[{}](tg://user?id={})".format(msg.from_user.first_name,
+                                            msg.from_user.id) + ", Please check the file you requested below."
+                                            "\nPlease use this feature wisely!",
+                                            parse_mode=ParseMode.MARKDOWN)
+        bot.sendChatAction(chat_id, "upload_document")
+        file_id = msg.reply_to_message.sticker.file_id
+        newFile = bot.get_file(file_id)
+        newFile.download('sticker.png')
+        bot.sendDocument(chat_id, document=open('sticker.png', 'rb'))
+        bot.sendChatAction(chat_id, "upload_photo")
+        bot.send_photo(chat_id, photo=open('sticker.png', 'rb'))
+        
+    else:
+        bot.sendChatAction(chat_id, "typing")
+        update.effective_message.reply_text("Hello " + "[{}](tg://user?id={})".format(msg.from_user.first_name,
+                                            msg.from_user.id) + ", Please reply to sticker message to get sticker image",
+                                            parse_mode=ParseMode.MARKDOWN)
 
 # /ip is for private use
 __help__ = """
- - /id: آیدی عددی گپ رو میدم بهت . حالا برا لینک کردن یا هرچی که احتیاجه.
- و اگه رو کسی ریپلی بزنید آیدی اون رو میدم!
- 
- 
- این بخشو اضافه میکنم بعدا حالا یا حالت شوخی تو گپ یا کل کل با اونایی که مشکل ایجاد میکنن 
- البته هنوز روحیش نیست چون یه مقدارکد نویسی همچین بخشی زیاده . پس سازندمو تشویق کنید😇
+ - /id: get the current group id. If used by replying to a message, gets that user's id.
+ - /runs: reply a random string from an array of replies.
+ - /slap: slap a user, or get slapped if not a reply.
+ - /time <place>: gives the local time at the given place.
+ - /info: get information about a user.
+ - /gdpr: deletes your information from the bot's database. Private chats only.
+ - /markdownhelp: quick summary of how markdown works in telegram - can only be called in private chats.
+ - /stickerid: reply to a sticker and get sticker id of that.
+ - /getsticker: reply to a sticker and get that sticker as .png and image. 
 """
 
-__mod_name__ = "فان"
+__mod_name__ = "Misc"
 
 ID_HANDLER = DisableAbleCommandHandler("id", get_id, pass_args=True)
 IP_HANDLER = CommandHandler("ip", get_bot_ip, filters=Filters.chat(OWNER_ID))
 
-TIME_HANDLER = CommandHandler("", get_time, pass_args=True)
+TIME_HANDLER = CommandHandler("time", get_time, pass_args=True)
 
-RUNS_HANDLER = DisableAbleCommandHandler("", runs)
-SLAP_HANDLER = DisableAbleCommandHandler("", slap, pass_args=True)
-INFO_HANDLER = DisableAbleCommandHandler("", info, pass_args=True)
+RUNS_HANDLER = DisableAbleCommandHandler("runs", runs)
+SLAP_HANDLER = DisableAbleCommandHandler("slap", slap, pass_args=True)
+INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
 
-ECHO_HANDLER = CommandHandler("", echo, filters=Filters.user(OWNER_ID))
-MD_HELP_HANDLER = CommandHandler("", markdown_help, filters=Filters.private)
+ECHO_HANDLER = CommandHandler("echo", echo, filters=Filters.user(OWNER_ID))
+MD_HELP_HANDLER = CommandHandler("markdownhelp", markdown_help, filters=Filters.private)
 
-STATS_HANDLER = CommandHandler("", stats, filters=CustomFilters.sudo_filter)
-GDPR_HANDLER = CommandHandler("", gdpr, filters=Filters.private)
+STATS_HANDLER = CommandHandler("stats", stats, filters=CustomFilters.sudo_filter)
+GDPR_HANDLER = CommandHandler("gdpr", gdpr, filters=Filters.private)
+
+STICKERID_HANDLER = DisableAbleCommandHandler("stickerid", stickerid)
+GETSTICKER_HANDLER = DisableAbleCommandHandler("getsticker", getsticker)
+
 
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(IP_HANDLER)
@@ -415,3 +457,5 @@ dispatcher.add_handler(ECHO_HANDLER)
 dispatcher.add_handler(MD_HELP_HANDLER)
 dispatcher.add_handler(STATS_HANDLER)
 dispatcher.add_handler(GDPR_HANDLER)
+dispatcher.add_handler(STICKERID_HANDLER)
+dispatcher.add_handler(GETSTICKER_HANDLER)

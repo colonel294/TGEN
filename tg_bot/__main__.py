@@ -18,46 +18,42 @@ from tg_bot.modules.helper_funcs.chat_status import is_user_admin
 from tg_bot.modules.helper_funcs.misc import paginate_modules
 
 PM_START_TEXT = """
+hoi {}, my name is {}! if you have any questions about how to use me please give me /help... 
 
-سلام {} . من {} هستم ! 😎
+im a group manager bot maintained by  [this person](tg://user?id={}).
 
-اگه منو نمیشناسی . من یه ربات پیشرفته محافظت و مدیریت گروهم  \
-یکم رک باشم باهات زبان برنامه نویسیم پایتون هست ! واس همین جزو سریع ترین ربات ها تو عملکردم . پس در نیوفت باهام \
-چون هرکه با ما در افتاد....؟
+My future updates will be put into This Channel - @MarieChechi & My Support Group @InFoTelGroup.
 
-اگه سوالی بود 🤔، نظری، پیشنهادی☺️، انتقادی😱 میتونی با [سازنده من](t.me/colonel294)حرف بزنی 🗣\
+This is my [Deploy Code](https://heroku.com/deploy?template=https://github.com/TGExplore/Marie-2.0-English),
+you can create clone same like me..
 
-خوب برای شروع  کار کردن میتونی از دستور /help استفاده کنی.
+For more commands click /help...
 
-اگه از من خوشت اومد یاا دوس داشتی من بتونم تو این دنیای وحشی زنده بمونم میتونی با دستور /donate کمکم کنی🤑 !
+**Keep in mind that any changes you DO do to the source have to be on github, as per the license.**
+
 """
 
 HELP_STRINGS = """
 
-خب بیب من همچنان *{}* هستم.
+Hello! my name *{}*.
 
-دستورات *اصلی* من:
- - /start: ربات و استارت میکنه.
- ———————————————————--
- - /help: همین پیامی که داری میبینی رو نشون میده😆.
-———————————————————--
- - /help <نام بخش>  
- اطلاعاتی راجب اون بخشی که میخوای رو بهت میده!
- ———————————————————--
- - /donate: اطلاعاتی راجب اینکه چطور میتونی کمکم کنی🙂!
- ———————————————————--
- - !تنظبمات:
-   - داخل pv : اطلاعاتی راجب تنظیمات همه قسمت های من در اختیارت میزاره.
-   - داخل گپت : تمام تنظیماتی که برای گپ اعمال شده رو داخل pv برات میفرسته.
-———————————————————--
+*Main* available commands:
+ - /start: Start the bot...
+ - /help: help....
+ - /donate: To find out more about donating!
+ - /settings:
+   - in PM: To find out what SETTINGS you have set....
+   - in a group:
+
 {}
-میرسیم به بخش جالب .کاربرد های من:
-""".format(dispatcher.bot.first_name, "" if not ALLOW_EXCL else "\nبهتره دستورات فارسی با ! و خارجی ها با / اجرا بشن.\n")
+And the following:
+""".format(dispatcher.bot.first_name, "" if not ALLOW_EXCL else "\nAll of the following commands  / or ! can  be used...\n")
 
-DONATE_STRING = """واو 😍! خیلی خوشحال شدم که میبینم آدم هایی هنوز آدم هایی مثل تو هستن 
-حقیقتا خیلی زمان برد⏱ تا  [سازنده من](t.me/colonel294) بتونه منو به اینجایی که هستم برسونه  
-یکم تشویق کردنش میتونه برای من یه هاست بهتر تهیه کنه تا همیشه فعال باشم یا شایدم یه پاکت بهمن 
-میتونی یکی شبیه من با اسمی که میخوای رو درخواست بدی ! بهش پیام بده"""
+DONATE_STRING = """Heya, glad to hear you want to donate!
+It took lots of work for [my creator](t.me/SonOfLars) to get me to where I am now, and every donation helps \
+motivate him to make me even better. All the donation money will go to a better VPS to host me, and/or beer \
+(see his bio!). He's just a poor student, so every little helps!
+There are two ways of paying him; [PayPal](paypal.me/PaulSonOfLars), or [Monzo](monzo.me/paulnionvestergaardlarsen)."""
 
 IMPORTED = {}
 MIGRATEABLE = []
@@ -239,7 +235,7 @@ def get_help(bot: Bot, update: Update):
     # ONLY send help in PM
     if chat.type != chat.PRIVATE:
 
-        update.effective_message.reply_text("اومم میبخشیدا  ازین دستور باید تو pv من استفاده کنی.",
+        update.effective_message.reply_text("Contact me in PM to get the list of possible commands.",
                                             reply_markup=InlineKeyboardMarkup(
                                                 [[InlineKeyboardButton(text="Help",
                                                                        url="t.me/{}?start=help".format(
@@ -248,7 +244,7 @@ def get_help(bot: Bot, update: Update):
 
     elif len(args) >= 2 and any(args[1].lower() == x for x in HELPABLE):
         module = args[1].lower()
-        text = "اینم لیست اطلاعات برای قسمت *{}* :\n".format(HELPABLE[module].__mod_name__) \
+        text = "Here is the available help for the *{}* module:\n".format(HELPABLE[module].__mod_name__) \
                + HELPABLE[module].__help__
         send_help(chat.id, text, InlineKeyboardMarkup([[InlineKeyboardButton(text="Back", callback_data="help_back")]]))
 
@@ -261,24 +257,24 @@ def send_settings(chat_id, user_id, user=False):
         if USER_SETTINGS:
             settings = "\n\n".join(
                 "*{}*:\n{}".format(mod.__mod_name__, mod.__user_settings__(user_id)) for mod in USER_SETTINGS.values())
-            dispatcher.bot.send_message(user_id, "اینا تنظیماتی هستن که خواستی:" + "\n\n" + settings,
+            dispatcher.bot.send_message(user_id, "These are your current settings:" + "\n\n" + settings,
                                         parse_mode=ParseMode.MARKDOWN)
 
         else:
-            dispatcher.bot.send_message(user_id, " تنظیمات شخصی خاصی اعتمال نشده🧐:",
+            dispatcher.bot.send_message(user_id, "Seems like there aren't any user specific settings available :'(",
                                         parse_mode=ParseMode.MARKDOWN)
 
     else:
         if CHAT_SETTINGS:
             chat_name = dispatcher.bot.getChat(chat_id).title
             dispatcher.bot.send_message(user_id,
-                                        text="تنظیمات کدوم {} گپ رو میخوای ببینی؟".format(
+                                        text="Which module would you like to check {}'s settings for?".format(
                                             chat_name),
                                         reply_markup=InlineKeyboardMarkup(
                                             paginate_modules(0, CHAT_SETTINGS, "stngs", chat=chat_id)))
         else:
-            dispatcher.bot.send_message(user_id, "اینطور که پیداس تنظیمات گپ تو دیتا بیس من نیست! :\nاین دستور  "
-                                                 "داخل گپی بفرست که من و  تو داخلش ادمینیم تا تنظیمات بدم بهت",
+            dispatcher.bot.send_message(user_id, "Seems like there aren't any chat settings available :'(\nSend this "
+                                                 "in a group chat you're admin in to find its current settings!",
                                         parse_mode=ParseMode.MARKDOWN)
 
 

@@ -22,29 +22,29 @@ def report_setting(bot: Bot, update: Update, args: List[str]):
 
     if chat.type == chat.PRIVATE:
         if len(args) >= 1:
-            if args[0] in ("روشن", "on"):
+            if args[0] in ("yes", "on"):
                 sql.set_user_setting(chat.id, True)
-                msg.reply_text("حالت خبرچین فعال شد! اگه کسی درخواست بده سریعا بهتون اطلاع میدم.")
+                msg.reply_text("Turned on reporting! You'll be notified whenever anyone reports something.")
 
-            elif args[0] in ("خاموش", "off"):
+            elif args[0] in ("no", "off"):
                 sql.set_user_setting(chat.id, False)
-                msg.reply_text("حالت خبرچین غیرفعال شد! کسی بمیره هم بهت اطلاع نمیدم😄")
+                msg.reply_text("Turned off reporting! You wont get any reports.")
         else:
-            msg.reply_text("حالت خبرچین شما : `{}`".format(sql.user_should_report(chat.id)),
+            msg.reply_text("Your current report preference is: `{}`".format(sql.user_should_report(chat.id)),
                            parse_mode=ParseMode.MARKDOWN)
 
     else:
         if len(args) >= 1:
-            if args[0] in ("روشن", "on"):
+            if args[0] in ("yes", "on"):
                 sql.set_chat_setting(chat.id, True)
-                msg.reply_text("خبرچین گپ فعال شد ، اگه کسی از دستور ریپورت یا /report روی کسی"
-                               "ریپلی کنه من سریعا به ادمینها اطلاع میدم.")
+                msg.reply_text("Turned on reporting! Admins who have turned on reports will be notified when /report "
+                               "or @admin are called.")
 
-            elif args[0] in ("غیرفعال", "off"):
+            elif args[0] in ("no", "off"):
                 sql.set_chat_setting(chat.id, False)
-                msg.reply_text("حالت خبرچین غیرفعال شد . اینجا همدیگه هم بکشن ، من صدام درنمیاد☹️.")
+                msg.reply_text("Turned off reporting! No admins will be notified on /report or @admin.")
         else:
-            msg.reply_text("حالت خبرچین این گپ: `{}`".format(sql.chat_should_report(chat.id)),
+            msg.reply_text("This chat's current setting is: `{}`".format(sql.chat_should_report(chat.id)),
                            parse_mode=ParseMode.MARKDOWN)
 
 
@@ -63,8 +63,8 @@ def report(bot: Bot, update: Update) -> str:
 
         if chat.username and chat.type == Chat.SUPERGROUP:
             msg = "<b>{}:</b>" \
-                  "\n<b>کاربر گزارش شده:</b> {} (<code>{}</code>)" \
-                  "\n<b>توسط:</b> {} (<code>{}</code>) مشخص شد!".format(html.escape(chat.title),
+                  "\n<b>Reported user:</b> {} (<code>{}</code>)" \
+                  "\n<b>Reported by:</b> {} (<code>{}</code>)".format(html.escape(chat.title),
                                                                       mention_html(
                                                                           reported_user.id,
                                                                           reported_user.first_name),
@@ -72,13 +72,13 @@ def report(bot: Bot, update: Update) -> str:
                                                                       mention_html(user.id,
                                                                                    user.first_name),
                                                                       user.id)
-            link = "\n<b>لینک:</b> " \
-                   "<a href=\"http://telegram.me/{}/{}\">کلیک کن</a>".format(chat.username, message.message_id)
+            link = "\n<b>Link:</b> " \
+                   "<a href=\"http://telegram.me/{}/{}\">click here</a>".format(chat.username, message.message_id)
 
             should_forward = False
 
         else:
-            msg = "کاربر {} درگپ \"{}\"درخواست ادمین کرده . خواهشا زود بیا!".format(mention_html(user.id, user.first_name),
+            msg = "{} is calling for admins in \"{}\"!".format(mention_html(user.id, user.first_name),
                                                                html.escape(chat_name))
             link = ""
             should_forward = True
@@ -111,33 +111,31 @@ def __migrate__(old_chat_id, new_chat_id):
 
 
 def __chat_settings__(chat_id, user_id):
-    return "حالت خبرچین این گپ *{}* است ، کاربرا میتونن با دستور ریپورت مشکل رو گزارش بدن!".format(
+    return "This chat is setup to send user reports to admins, via /report and @admin: `{}`".format(
         sql.chat_should_report(chat_id))
 
 
 def __user_settings__(user_id):
-    return "وضعیت اطلاع گزارش شما *{}* هست! ".format(
+    return "You receive reports from chats you're admin in: `{}`.\nToggle this with /reports in PM.".format(
         sql.user_should_report(user_id))
 
 
-__mod_name__ = "خبرچین"
+__mod_name__ = "Reporting"
 
 __help__ = """
-خبرچینی کار بدیه میدونم😶 ولی گاهی لازمه❗️
-- [!ریپورت] [ریپورت] (ریپلی) (دلیل اختیاری)
-[/report] [@admin] (Reply) (Reason)👉
-خبرچین
-———————————————————--
-- [!خبرچین] (روشن یا خاموش) 
-[/reporting] (on OR off) 👉 کلیدخبرچین
-———————————————————--
-* 1 : اگه به موردی غیرمجاز برخورد کردید میتونید با ریپلی زدن و یکی از 4 دستور تعریف شده ، به ادمین ها گزارشش کنید
-   2 : حالت خبرچین پیشفرض خاموش هست!
+ - /report <reason>: reply to a message to report it to admins.
+ - @admin: reply to a message to report it to admins.
+NOTE: neither of these will get triggered if used by admins
+
+*Admin only:*
+ - /reports <on/off>: change report setting, or view current status.
+   - If done in pm, toggles your status.
+   - If in chat, toggles that chat's status.
 """
 
-REPORT_HANDLER = CommandHandler(["ریپورت", "report"], report, filters=Filters.group)
-SETTING_HANDLER = CommandHandler(["خبرچین", "reporting"], report_setting, pass_args=True)
-ADMIN_REPORT_HANDLER = RegexHandler(["(?i)ریپورت(s)?", "(?i)@admin(s)?"], report)
+REPORT_HANDLER = CommandHandler("report", report, filters=Filters.group)
+SETTING_HANDLER = CommandHandler("reports", report_setting, pass_args=True)
+ADMIN_REPORT_HANDLER = RegexHandler("(?i)@admin(s)?", report)
 
 dispatcher.add_handler(REPORT_HANDLER, REPORT_GROUP)
 dispatcher.add_handler(ADMIN_REPORT_HANDLER, REPORT_GROUP)
