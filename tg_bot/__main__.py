@@ -18,42 +18,54 @@ from tg_bot.modules.helper_funcs.chat_status import is_user_admin
 from tg_bot.modules.helper_funcs.misc import paginate_modules
 
 PM_START_TEXT = """
-hoi {}, my name is {}! if you have any questions about how to use me please give me /help... 
+سلام {} . من {} هستم ! 😎
 
-im a group manager bot maintained by  [this person](tg://user?id={}).
+اگه منو نمیشناسی . من یه ربات پیشرفته محافظت و مدیریت گروهم  \
+یکم رک باشم باهات زبان برنامه نویسیم پایتون هست ! واس همین جزو سریع ترین ربات ها تو عملکردم . پس در نیوفت باهام \
+چون هرکه با ما در افتاد....؟
 
-My future updates will be put into This Channel - @MarieChechi & My Support Group @InFoTelGroup.
+اگه سوالی بود 🤔، نظری، پیشنهادی☺️، انتقادی😱 میتونی با [سازنده من](t.me/colonel294)حرف بزنی 🗣\
 
-This is my [Deploy Code](https://heroku.com/deploy?template=https://github.com/TGExplore/Marie-2.0-English),
-you can create clone same like me..
+من میتونم تکثیر بشم 👥، با تیم من ارتباط برقرار کن تا بتونی یه کپی از من با اسمی که میخوای داشته باشی🙂.
 
-For more commands click /help...
+خوب برای شروع  کار کردن میتونی از دستور /help استفاده کنی.
 
-**Keep in mind that any changes you DO do to the source have to be on github, as per the license.**
+اگه از من خوشت اومد یاا دوس داشتی من بتونم تو این دنیای وحشی زنده بمونم میتونی با دستور /donate کمکم کنی🤑 !
 
 """
 
 HELP_STRINGS = """
+دوباره سلام😄 اسم من *{}* . اصلا دوس دارم اسممو بگم هی 
+من یه محافظ پیشرفتم😎
+میدونم خیلی کنجکاوید که من چه کارایی انجام میدم ولی لازم 
+نیس زیاد به مغزتون فشار بیارید چون میتونید با استفاده از
+موارد زیر با قابلیتای من آشنا بشید😌 
 
-Hello! my name *{}*.
 
-*Main* available commands:
- - /start: Start the bot...
- - /help: help....
- - /donate: To find out more about donating!
- - /settings:
-   - in PM: To find out what SETTINGS you have set....
-   - in a group:
-
+این لیست دستورات *اصلی*  منه:
+ - /start: ربات و استارت میکنه.
+ ———————————————————--
+ - /help: همین پیامی که داری میبینی رو نشون میده😆.
+———————————————————--
+ - /help <نام بخش>  
+ اطلاعاتی راجب اون بخشی که میخوای رو بهت میده!
+ ———————————————————--
+ - /donate: اطلاعاتی راجب اینکه چطور میتونی کمکم کنی🙂!
+ ———————————————————--
+ - !تنظبمات:
+   - داخل pv : اطلاعاتی راجب تنظیمات همه قسمت های من در اختیارت میزاره.
+   - داخل گپت : تمام تنظیماتی که برای گپ اعمال شده رو داخل pv برات میفرسته.
+———————————————————--
 {}
-And the following:
-""".format(dispatcher.bot.first_name, "" if not ALLOW_EXCL else "\nAll of the following commands  / or ! can  be used...\n")
+میرسیم به بخش جالب .کاربرد های من:
+""".format(dispatcher.bot.first_name, "" if not ALLOW_EXCL else "\nبهتره دستورات فارسی با ! و خارجی ها با / اجرا بشن.\n")
 
-DONATE_STRING = """Heya, glad to hear you want to donate!
-It took lots of work for [my creator](t.me/SonOfLars) to get me to where I am now, and every donation helps \
-motivate him to make me even better. All the donation money will go to a better VPS to host me, and/or beer \
-(see his bio!). He's just a poor student, so every little helps!
-There are two ways of paying him; [PayPal](paypal.me/PaulSonOfLars), or [Monzo](monzo.me/paulnionvestergaardlarsen)."""
+DONATE_STRING = """ 😍! خیلی خوشحال شدم که میبینم آدم هایی هنوز آدم هایی مثل تو هستن 
+حقیقتا خیلی زمان برد⏱ تا  [سازنده من](t.me/colonel294) بتونه منو به اینجایی که هستم برسونه  
+یکم تشویق کردنش میتونه برای من یه هاست بهتر تهیه کنه تا همیشه فعال باشم یا شایدم یه پاکت بهمن 
+میتونی یکی شبیه من با اسمی که میخوای رو درخواست بدی ! بهش پیام بده
+
+"""
 
 IMPORTED = {}
 MIGRATEABLE = []
